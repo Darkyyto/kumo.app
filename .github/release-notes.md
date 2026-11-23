@@ -1,2 +1,2 @@
 <!-- silent -->
-- Shows how far along your notes are while they are being written
+- Kumo, a single page to transcribe, name and revisit lectures
