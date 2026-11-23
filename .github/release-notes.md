@@ -1,2 +1,2 @@
 <!-- silent -->
-- Kumo, a single page to transcribe, name and revisit lectures
+- Kumo 1.0: one landscape window to record, read along and revisit your lectures

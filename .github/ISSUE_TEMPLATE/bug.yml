@@ -1,0 +1,25 @@
+name: Bug report
+description: Something in Kumo does not work as it should
+labels: [bug]
+body:
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened
+      description: What you did, what you expected and what you saw instead.
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Kumo version
+      description: Shown in Settings › About.
+    validations:
+      required: true
+  - type: input
+    id: macos
+    attributes:
+      label: macOS version and Mac model
+      placeholder: macOS 26.1, MacBook Pro 14-inch (M3)
+    validations:
+      required: true
