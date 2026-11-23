@@ -1,0 +1,115 @@
+import AppKit
+import SwiftUI
+
+enum Palette {
+    static let canvas = Color(light: 0xF5F5F5, dark: 0x0E0E10)
+    static let ink = Color(light: 0x1C1C22, dark: 0xF5F5F7)
+    static let inkSecondary = Color(light: 0x6B6A72, dark: 0xA1A1A6)
+    static let inkTertiary = Color(light: 0xA3A1A8, dark: 0x8E8E93)
+    static let hairline = Color(light: 0x000000, lightAlpha: 0.06, dark: 0xFFFFFF, darkAlpha: 0.1)
+    static let surface = Color(light: 0xFFFFFF, dark: 0x1A1A1D)
+    static let card = surface.opacity(0.72)
+    static let record = Color(hex: 0xFF5A4E)
+    static let rest = ModePalette(light: Color(light: 0xFFE4D2, dark: 0x33261E), mid: Color(hex: 0xFFB48A), deep: Color(hex: 0xE9764A))
+    static let blue = Color(light: 0x007AFF, dark: 0x0A84FF)
+    static let indigo = Color(light: 0x5856D6, dark: 0x5E5CE6)
+    static let purple = Color(light: 0xAF52DE, dark: 0xBF5AF2)
+    static let pink = Color(light: 0xFF2D55, dark: 0xFF375F)
+    static let orange = Color(light: 0xFF9500, dark: 0xFF9F0A)
+    static let green = Color(light: 0x34C759, dark: 0x30D158)
+    static let teal = Color(light: 0x30B0C7, dark: 0x40C8E0)
+    static let gray = Color(light: 0x8E8E93, dark: 0x8E8E93)
+    static let neutral = ModePalette(light: Color(light: 0xEDE9F7, dark: 0x26262A), mid: Color(light: 0xD9E6F5, dark: 0x34405A), deep: Color(hex: 0x8E8AA8))
+}
+
+enum Appearance: String, CaseIterable, Identifiable {
+    case system
+    case light
+    case dark
+
+    static let key = "appearance"
+
+    var id: String { rawValue }
+
+    var title: String {
+        switch self {
+        case .system: "Automatic"
+        case .light: "Light"
+        case .dark: "Dark"
+        }
+    }
+
+    static var current: Appearance {
+        Appearance(rawValue: UserDefaults.standard.string(forKey: key) ?? "") ?? .system
+    }
+
+    @MainActor
+    func apply() {
+        switch self {
+        case .system: NSApp.appearance = nil
+        case .light: NSApp.appearance = NSAppearance(named: .aqua)
+        case .dark: NSApp.appearance = NSAppearance(named: .darkAqua)
+        }
+    }
+}
+
+struct ModePalette: Equatable {
+    let light: Color
+    let mid: Color
+    let deep: Color
+}
+
+extension FocusMode {
+    var palette: ModePalette {
+        switch self {
+        case .flight: ModePalette(light: Color(light: 0xDCEEFF, dark: 0x1A2533), mid: Color(hex: 0x8CC8FF), deep: Color(light: 0x2F86E8, dark: 0x4093F2))
+        case .orbit: ModePalette(light: Color(light: 0xE9E4FF, dark: 0x232133), mid: Color(hex: 0xA99BFF), deep: Color(light: 0x6650E6, dark: 0x8C7BFF))
+        case .bloom: ModePalette(light: Color(light: 0xDDF5E3, dark: 0x1A2820), mid: Color(hex: 0x86D9A2), deep: Color(hex: 0x2FA35E))
+        case .tide: ModePalette(light: Color(light: 0xD6F4F4, dark: 0x16292A), mid: Color(hex: 0x6FD3D6), deep: Color(light: 0x14939B, dark: 0x1AA0A8))
+        }
+    }
+}
+
+extension Goal.Tint {
+    var color: Color {
+        switch self {
+        case .amber: Color(hex: 0xF5A623)
+        case .coral: Color(hex: 0xFF7A59)
+        case .rose: Color(hex: 0xF0628E)
+        case .violet: Color(hex: 0x8B74F0)
+        case .sky: Color(hex: 0x3D9BF0)
+        case .teal: Color(hex: 0x1FB3B0)
+        case .moss: Color(hex: 0x5DB65A)
+        case .slate: Color(hex: 0x7D8696)
+        }
+    }
+}
+
+extension Color {
+    init(light: UInt32, lightAlpha: Double = 1, dark: UInt32, darkAlpha: Double = 1) {
+        self.init(nsColor: NSColor(name: nil) { appearance in
+            let isDark = appearance.bestMatch(from: [.darkAqua, .aqua]) == .darkAqua
+            return NSColor(hex: isDark ? dark : light, alpha: isDark ? darkAlpha : lightAlpha)
+        })
+    }
+
+    init(hex: UInt32) {
+        self.init(
+            .sRGB,
+            red: Double((hex >> 16) & 0xFF) / 255,
+            green: Double((hex >> 8) & 0xFF) / 255,
+            blue: Double(hex & 0xFF) / 255
+        )
+    }
+}
+
+extension NSColor {
+    convenience init(hex: UInt32, alpha: Double = 1) {
+        self.init(
+            srgbRed: CGFloat((hex >> 16) & 0xFF) / 255,
+            green: CGFloat((hex >> 8) & 0xFF) / 255,
+            blue: CGFloat(hex & 0xFF) / 255,
+            alpha: alpha
+        )
+    }
+}
