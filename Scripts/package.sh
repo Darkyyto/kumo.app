@@ -1,14 +1,14 @@
 #!/bin/zsh
 set -euo pipefail
 
+NAME="Kumo"
 ROOT="${0:A:h:h}"
 VERSION="$(awk -F'"' '/MARKETING_VERSION/{print $2; exit}' "$ROOT/project.yml")"
-WORK="${TMPDIR:-/tmp}/Kumo-release"
+WORK="${TMPDIR:-/tmp}/$NAME-release"
 DIST="$ROOT/dist"
-APP="$WORK/Build/Products/Release/Kumo.app"
-DMG="$DIST/Kumo-$VERSION.dmg"
+APP="$WORK/Build/Products/Release/$NAME.app"
+DMG="$DIST/$NAME-$VERSION.dmg"
 IDENTITY_HASH="71D358801440B0BE64781642ABAAECCD2B23048E"
-LEGACY_BUNDLE="FocusKit.app"
 
 rm -rf "$WORK/stage"
 mkdir -p "$DIST" "$WORK/stage"
@@ -16,15 +16,15 @@ mkdir -p "$DIST" "$WORK/stage"
 cd "$ROOT"
 xcodegen generate --quiet
 xcodebuild \
-  -project Kumo.xcodeproj \
-  -scheme Kumo \
+  -project "$NAME.xcodeproj" \
+  -scheme "$NAME" \
   -configuration Release \
   -destination 'generic/platform=macOS' \
   -derivedDataPath "$WORK" \
   -skipMacroValidation \
   -skipPackagePluginValidation \
   -quiet \
-  ARCHS="arm64" \
+  ARCHS="arm64 x86_64" \
   ONLY_ACTIVE_ARCH=NO \
   build
 
@@ -41,30 +41,28 @@ elif [[ -f "$ROOT/signing/build.keychain-db" && -f "$ROOT/signing/p12-password.t
 fi
 
 codesign --force --deep --options runtime "${KEYCHAIN_ARGS[@]}" --sign "$IDENTITY" \
-  --entitlements "$ROOT/Kumo/Resources/Kumo.entitlements" "$APP"
+  --entitlements "$ROOT/$NAME/Resources/$NAME.entitlements" "$APP"
 codesign --verify --strict "$APP"
 
-ditto "$APP" "$WORK/stage/Kumo.app"
+ditto "$APP" "$WORK/stage/$NAME.app"
 ln -s /Applications "$WORK/stage/Applications"
 
 rm -f "$DMG"
-DMGBUILD_BIN="${DMGBUILD:-$(command -v dmgbuild || true)}"
-if [[ -n "$DMGBUILD_BIN" && -x "$DMGBUILD_BIN" ]]; then
-  # The installer window: pale background, Kumo on the left, an arrow, Applications on the right.
-  "$DMGBUILD_BIN" -s "$ROOT/Scripts/dmg/settings.py" -D app="$APP" -D background="$ROOT/Scripts/dmg/background.tiff" "Kumo" "$DMG"
+DMGBUILD_BIN="${DMGBUILD:-$(command -v dmgbuild || echo "$HOME/Library/Caches/dmgbuild-venv/bin/dmgbuild")}"
+if [[ -x "$DMGBUILD_BIN" ]]; then
+  # The installer window: graphite page, the app on the left, an arrow, Applications on the right.
+  "$DMGBUILD_BIN" -s "$ROOT/Scripts/dmg/settings-single.py" -D app="$APP" -D background="$ROOT/Scripts/dmg/background-kumo.tiff" "$NAME" "$DMG"
 else
-  hdiutil create -quiet -volname "Kumo" -srcfolder "$WORK/stage" -ov -format ULFO "$DMG"
+  echo "warning: dmgbuild not found, making a plain disk image. Install it with: pip3 install dmgbuild" >&2
+  hdiutil create -quiet -volname "$NAME" -srcfolder "$WORK/stage" -ov -format ULFO "$DMG"
 fi
 
-cp "$DMG" "$DIST/Kumo.dmg"
+cp "$DMG" "$DIST/$NAME.dmg"
+rm -rf "$DIST/$NAME.app"
+ditto "$APP" "$DIST/$NAME.app"
 
-rm -f "$DIST/Kumo-$VERSION.zip" "$DIST/Kumo-$VERSION-transition.zip"
-ditto -c -k --sequesterRsrc --keepParent "$APP" "$DIST/Kumo-$VERSION.zip"
-
-rm -rf "$WORK/transition"
-mkdir -p "$WORK/transition"
-ditto "$APP" "$WORK/transition/$LEGACY_BUNDLE"
-ditto -c -k --sequesterRsrc --keepParent "$WORK/transition/$LEGACY_BUNDLE" "$DIST/Kumo-$VERSION-transition.zip"
+rm -f "$DIST/$NAME-$VERSION.zip"
+ditto -c -k --sequesterRsrc --keepParent "$APP" "$DIST/$NAME-$VERSION.zip"
 
 echo "App  $(du -sh "$APP" | cut -f1)"
 echo "DMG  $(du -h "$DMG" | cut -f1)  $DMG"

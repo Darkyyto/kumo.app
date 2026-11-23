@@ -1,6 +1,6 @@
 .PHONY: project build run dmg clean
 
-XCODEBUILD = xcodebuild -project Kumo.xcodeproj -scheme Kumo -destination 'platform=macOS,arch=arm64' -skipMacroValidation -skipPackagePluginValidation -quiet
+XCODEBUILD = xcodebuild -project Kumo.xcodeproj -scheme Kumo -destination 'platform=macOS' -skipMacroValidation -skipPackagePluginValidation -quiet
 LSREGISTER = /System/Library/Frameworks/CoreServices.framework/Frameworks/LaunchServices.framework/Support/lsregister
 PRODUCTS = $$(xcodebuild -project Kumo.xcodeproj -scheme Kumo -configuration $(1) -showBuildSettings 2>/dev/null | awk -F' = ' '/ BUILT_PRODUCTS_DIR/{print $$2}')/Kumo.app
 
