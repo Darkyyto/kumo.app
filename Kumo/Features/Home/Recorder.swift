@@ -1,100 +1,7 @@
 import SwiftUI
 
-/// Start, read along, save. No scenes and no animation: the only things that change are the words and the clock.
-struct Recorder: View {
-    @Environment(Library.self) private var library
-    @Environment(VoiceRecorder.self) private var recorder
-    @Environment(NoteEnhancer.self) private var enhancer
-    @AppStorage(Preference.persona) private var persona = Persona.student
-    @AppStorage(Preference.transcriptionLocale) private var localeIdentifier = ""
-    @AppStorage(Preference.writesNotes) private var writesNotes = true
-    @State private var name = ""
-    @State private var saved: Recording?
-
-    var body: some View {
-        VStack(spacing: 12) {
-            switch recorder.state {
-            case .idle:
-                if let saved {
-                    SavedCard(recording: saved) { self.saved = nil }
-                }
-                start
-            case .preparing:
-                status("Getting ready…")
-            case .downloadingModel:
-                status("Downloading the speech model. This happens once.")
-            case .recording(let since):
-                LiveTranscript(since: since, language: recorder.transcriptionLocale?.localizedName, copy: copy, stop: stop)
-            case .finishing:
-                status("Saving…")
-            }
-
-            if let message = recorder.errorMessage {
-                ErrorBanner(message: message) { recorder.dismissError() }
-            }
-        }
-    }
-
-    private var start: some View {
-        Tile(padding: 28) {
-            VStack(spacing: 18) {
-                SitePill(title: "Start transcribing", style: .ink, action: begin)
-                    .keyboardShortcut(.return, modifiers: .command)
-                TextField("Name it now, or after (optional)", text: $name)
-                    .textFieldStyle(.plain)
-                    .multilineTextAlignment(.center)
-                    .font(.system(size: 14))
-                    .foregroundStyle(Palette.ink)
-                    .padding(.horizontal, 16)
-                    .frame(maxWidth: 360, minHeight: 40)
-                    .background(Site.row, in: .rect(cornerRadius: 14, style: .continuous))
-                Text("Words appear as people speak. Audio and text stay on this Mac.")
-                    .font(.system(size: 12.5))
-                    .foregroundStyle(Palette.inkTertiary)
-            }
-            .frame(maxWidth: .infinity)
-        }
-        .fixedSize(horizontal: false, vertical: true)
-    }
-
-    private func status(_ text: String) -> some View {
-        Tile(padding: 28) {
-            HStack(spacing: 10) {
-                ProgressView().controlSize(.small)
-                Text(text)
-                    .font(.system(size: 14))
-                    .foregroundStyle(Palette.inkSecondary)
-            }
-            .frame(maxWidth: .infinity)
-        }
-        .fixedSize(horizontal: false, vertical: true)
-    }
-
-    private func begin() {
-        let title = name.trimmingCharacters(in: .whitespacesAndNewlines)
-        let vocabulary = library.activeGoals.map(\.title)
-        let locale = Locale.speech(localeIdentifier)
-        let noun = persona.recordingNoun
-        Task {
-            await recorder.start(locale: locale, goalID: nil, vocabulary: vocabulary, noun: noun, name: title)
-        }
-        name = ""
-        saved = nil
-    }
-
-    private func stop() {
-        recorder.finishStandalone(enhancer: enhancer, persona: persona, refine: writesNotes) { saved = $0 }
-    }
-
-    private func copy() {
-        let text = Transcription.joined([recorder.finalizedText, recorder.volatileText])
-        NSPasteboard.general.clearContents()
-        NSPasteboard.general.setString(text, forType: .string)
-    }
-}
-
 /// After Stop: the recording is already safe. Give it a name if it needs one.
-private struct SavedCard: View {
+struct SavedCard: View {
     let recording: Recording
     let dismiss: () -> Void
     @Environment(Library.self) private var library
@@ -186,67 +93,24 @@ private struct SavedCard: View {
     }
 }
 
-/// The running transcript. It reads the recorder itself, so only this view redraws as words arrive.
-private struct LiveTranscript: View {
-    let since: Date
-    let language: String?
-    let copy: () -> Void
-    let stop: () -> Void
+/// The running words. It reads the recorder itself, so only this view redraws as they arrive.
+struct TranscriptText: View {
     @Environment(VoiceRecorder.self) private var recorder
-    @Environment(\.scenePhase) private var scenePhase
 
     /// The screen only ever needs the last few lines. The whole text is kept and saved by the recorder.
     private var finalized: String {
-        String(recorder.finalizedText.suffix(1_400))
+        String(recorder.finalizedText.suffix(1_800))
     }
 
     var body: some View {
-        VStack(spacing: 12) {
-            Tile(padding: 24) {
-                VStack(alignment: .leading, spacing: 16) {
-                    HStack(spacing: 10) {
-                        Circle()
-                            .fill(Palette.record)
-                            .frame(width: 8, height: 8)
-                        Text("Recording")
-                            .font(.system(size: 14, weight: .semibold))
-                            .foregroundStyle(Palette.ink)
-                        if let language {
-                            Text(language)
-                                .font(.system(size: 13))
-                                .foregroundStyle(Palette.inkTertiary)
-                        }
-                        Spacer(minLength: 12)
-                        Text(since, style: .timer)
-                            .font(.numeric(14, weight: .medium))
-                            .foregroundStyle(Palette.inkSecondary)
-                            .monospacedDigit()
-                    }
-                    LevelMeter()
-                        .frame(height: 4)
-                    transcript
-                        .font(.system(size: 18))
-                        .lineSpacing(5)
-                        .frame(maxWidth: .infinity, alignment: .bottomLeading)
-                        .frame(height: 300, alignment: .bottomLeading)
-                        .clipped()
-                        .mask {
-                            LinearGradient(stops: [.init(color: .clear, location: 0), .init(color: .black, location: 0.12)], startPoint: .top, endPoint: .bottom)
-                        }
-                }
+        transcript
+            .font(.system(size: 20))
+            .lineSpacing(6)
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottomLeading)
+            .clipped()
+            .mask {
+                LinearGradient(stops: [.init(color: .clear, location: 0), .init(color: .black, location: 0.1)], startPoint: .top, endPoint: .bottom)
             }
-            .fixedSize(horizontal: false, vertical: true)
-
-            HStack(spacing: 10) {
-                SitePill(title: "Stop", style: .ink, action: stop)
-                    .keyboardShortcut(.return, modifiers: .command)
-                SitePill(title: "Copy", style: .soft, action: copy)
-                Spacer()
-            }
-        }
-        .onAppear { recorder.setMetering(scenePhase == .active) }
-        .onChange(of: scenePhase) { _, phase in recorder.setMetering(phase == .active) }
-        .onDisappear { recorder.setMetering(false) }
     }
 
     @ViewBuilder
@@ -263,17 +127,18 @@ private struct LiveTranscript: View {
 }
 
 /// One thin bar for the microphone level. Redrawn a few times a second, and only while the window is in front.
-private struct LevelMeter: View {
+struct LevelMeter: View {
+    var tint: Color = Palette.ink
     @Environment(VoiceRecorder.self) private var recorder
 
     var body: some View {
         let level = CGFloat(recorder.levels.last ?? 0)
         Capsule()
-            .fill(Palette.ink.opacity(0.08))
+            .fill(tint.opacity(0.12))
             .overlay(alignment: .leading) {
                 GeometryReader { proxy in
                     Capsule()
-                        .fill(Palette.ink.opacity(0.7))
+                        .fill(tint.opacity(0.85))
                         .frame(width: max(4, proxy.size.width * level))
                 }
             }

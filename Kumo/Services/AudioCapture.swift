@@ -99,7 +99,7 @@ final class AudioCapture: @unchecked Sendable {
             self.fileConverter = fileConverter
             lastBuffer = .now
         }
-        input.installTap(onBus: 0, bufferSize: 4096, format: inputFormat) { [weak self] buffer, _ in
+        input.installTap(onBus: 0, bufferSize: 8192, format: inputFormat) { [weak self] buffer, _ in
             self?.process(buffer)
         }
         engine.prepare()

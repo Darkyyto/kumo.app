@@ -45,8 +45,9 @@ struct KumoApp: App {
                     library.flush()
                 }
         }
+        .windowStyle(.hiddenTitleBar)
         .windowResizability(.contentMinSize)
-        .defaultSize(width: 760, height: 820)
+        .defaultSize(width: 1000, height: 640)
         .restorationBehavior(.disabled)
 
         Settings {

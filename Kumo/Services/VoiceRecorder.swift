@@ -157,7 +157,7 @@ final class VoiceRecorder {
 
     private func saveDraft(force: Bool = false) {
         guard case .recording(let since) = state, let fileName, draftID != nil else { return }
-        guard force || Date.now.timeIntervalSince(lastDraftSave) > 20 else { return }
+        guard force || Date.now.timeIntervalSince(lastDraftSave) > 60 else { return }
         lastDraftSave = .now
         var draft = makeRecording(fileName: fileName, since: since)
         draft.stage = .recording
