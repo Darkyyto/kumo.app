@@ -1,5 +1,5 @@
-// Draws the installer window backgrounds for the Kumo and Shima disk images.
-// swiftc -O Scripts/dmg/make-background.swift -o /tmp/make-background && /tmp/make-background <out-dir> <shima-icon.png> <kumo-icon.png>
+// Draws the installer window background for the Kumo disk image.
+// swiftc -O Scripts/dmg/make-background.swift -o /tmp/make-background && /tmp/make-background <out-dir> <icon.png>
 import AppKit
 
 struct Design {
@@ -87,13 +87,10 @@ func draw(_ design: Design, marks: [String: NSImage], scale: Int) -> NSBitmapIma
 
 let out = CommandLine.arguments[1]
 let marks = [
-    "Shima": NSImage(contentsOfFile: CommandLine.arguments[2])!,
-    "Kumo": NSImage(contentsOfFile: CommandLine.arguments[3])!,
+    "Kumo": NSImage(contentsOfFile: CommandLine.arguments[2])!,
 ]
 let designs = [
-    Design(name: "shima", title: "Shima", subtitle: "Drag Shima into Applications.", tagline: "Your notch, put to work.", marks: ["Shima"], icons: [(180, "Shima"), (480, "Applications")], arrow: (270, 390)),
     Design(name: "kumo", title: "Kumo", subtitle: "Drag Kumo into Applications.", tagline: "Lectures, written down as they happen.", marks: ["Kumo"], icons: [(180, "Kumo"), (480, "Applications")], arrow: (270, 390)),
-    Design(name: "bundle", title: "Kumo and Shima", subtitle: "Drag both apps into Applications.", tagline: "Two small Mac apps by Salise Studio.", marks: ["Kumo", "Shima"], icons: [(130, "Kumo"), (270, "Shima"), (530, "Applications")], arrow: (345, 440)),
 ]
 for design in designs {
     for scale in [1, 2] {

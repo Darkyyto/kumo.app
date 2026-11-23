@@ -1,4 +1,4 @@
-# dmgbuild settings for the single-app installer window (Kumo or Shima).
+# dmgbuild settings for the single-app installer window.
 # dmgbuild -s Scripts/dmg/settings-single.py -D app=/path/to/App.app -D background=Scripts/dmg/background-<name>.tiff "<Name>" <Name>.dmg
 import os
 
