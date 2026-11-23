@@ -58,8 +58,8 @@ else
 fi
 
 cp "$DMG" "$DIST/$NAME.dmg"
-rm -rf "$DIST/$NAME.app"
-ditto "$APP" "$DIST/$NAME.app"
+# The built app stays in the temporary folder and is taken out of Launch Services, so Spotlight never lists a second copy.
+/System/Library/Frameworks/CoreServices.framework/Frameworks/LaunchServices.framework/Support/lsregister -u "$APP" || true
 
 rm -f "$DIST/$NAME-$VERSION.zip"
 ditto -c -k --sequesterRsrc --keepParent "$APP" "$DIST/$NAME-$VERSION.zip"
