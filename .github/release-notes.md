@@ -1,2 +1,2 @@
 <!-- silent -->
-- Kumo 1.0: one landscape window to record, read along and revisit your lectures
+- The live transcript scrolls and always shows the latest words, even in long lectures

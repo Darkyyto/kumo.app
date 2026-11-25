@@ -93,36 +93,33 @@ struct SavedCard: View {
     }
 }
 
-/// The running words. It reads the recorder itself, so only this view redraws as they arrive.
+/// The running words. Every finished piece is its own line and only the last, still changing one is redrawn. It follows the end by itself, and you can scroll up to read what came before.
 struct TranscriptText: View {
     @Environment(VoiceRecorder.self) private var recorder
 
-    /// The screen only ever needs the last few lines. The whole text is kept and saved by the recorder.
-    private var finalized: String {
-        String(recorder.finalizedText.suffix(1_800))
-    }
-
     var body: some View {
-        transcript
+        ScrollView {
+            LazyVStack(alignment: .leading, spacing: 12) {
+                if recorder.segments.isEmpty, recorder.volatileText.isEmpty {
+                    Text("Listening…")
+                        .foregroundStyle(Palette.inkTertiary)
+                }
+                ForEach(Array(recorder.segments.enumerated()), id: \.offset) { _, segment in
+                    Text(segment)
+                        .foregroundStyle(Palette.ink)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                }
+                if !recorder.volatileText.isEmpty {
+                    Text(recorder.volatileText)
+                        .foregroundStyle(Palette.inkSecondary)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                }
+            }
             .font(.system(size: 20))
             .lineSpacing(6)
-            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottomLeading)
-            .clipped()
-            .mask {
-                LinearGradient(stops: [.init(color: .clear, location: 0), .init(color: .black, location: 0.1)], startPoint: .top, endPoint: .bottom)
-            }
-    }
-
-    @ViewBuilder
-    private var transcript: some View {
-        if finalized.isEmpty, recorder.volatileText.isEmpty {
-            Text("Listening…")
-                .foregroundStyle(Palette.inkTertiary)
-        } else {
-            Text(finalized).foregroundStyle(Palette.ink)
-                + Text(finalized.isEmpty || recorder.volatileText.isEmpty ? "" : " ")
-                + Text(recorder.volatileText).foregroundStyle(Palette.inkSecondary)
         }
+        .defaultScrollAnchor(.bottom)
+        .scrollIndicators(.automatic)
     }
 }
 

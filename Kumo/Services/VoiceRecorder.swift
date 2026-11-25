@@ -17,6 +17,8 @@ final class VoiceRecorder {
 
     private(set) var state: State = .idle
     private(set) var finalizedText = ""
+    /// The same words in the pieces they arrived in, so the screen can show a long lecture without laying out one huge text.
+    private(set) var segments: [String] = []
     private(set) var volatileText = ""
     private(set) var levels = [Float](repeating: 0, count: levelHistory)
     private(set) var errorMessage: String?
@@ -201,6 +203,7 @@ final class VoiceRecorder {
         let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else { return }
         finalizedText = Transcription.joined([finalizedText, trimmed])
+        segments.append(trimmed)
         saveDraft()
     }
 
@@ -212,6 +215,7 @@ final class VoiceRecorder {
 
     private func reset() {
         finalizedText = ""
+        segments = []
         volatileText = ""
         errorMessage = nil
         levels = [Float](repeating: 0, count: Self.levelHistory)
